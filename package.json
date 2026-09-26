@@ -1,0 +1,25 @@
+{
+  "name": "watch2gether",
+  "version": "0.1.0",
+  "description": "",
+  "main": "src/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": [],
+  "type": "module",
+  "private": "true",
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.3"
+  },
+  "allowScripts": {
+    "better-sqlite3@11.10.0": true
+  }
+}
