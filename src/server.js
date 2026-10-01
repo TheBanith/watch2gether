@@ -299,10 +299,19 @@ io.on('connection', (socket) => {
     socket.emit('queue:state', listQueue(db, room.id));
   });
 
-  socket.on('chat:send', ({ body } = {}) => {
+  socket.on('chat:send', ({ body, kind, id } = {}) => {
     if (!joinedRoomId) return;
-    const text = String(body || '').trim().slice(0, 500);
-    if (!text) return;
+    let text;
+    if (kind === 'sticker' || kind === 'gif') {
+      // Media messages reference a catalog id only; the client renders an
+      // image solely when the id exists in its local whitelist.
+      const ref = String(id || '');
+      if (!/^[a-z0-9-]{1,40}$/.test(ref)) return;
+      text = `${kind}:${ref}`;
+    } else {
+      text = String(body || '').trim().slice(0, 500);
+      if (!text) return;
+    }
     const now = Date.now();
     if (now - (lastChatAt.get(socket.id) || 0) < 500) {
       socket.emit('chat:error', { message: 'Slow down a little.' });

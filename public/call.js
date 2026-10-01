@@ -47,6 +47,11 @@
   let myFx = { filter: 'none', overlay: 'none' };
   const peerFx = new Map(); // socketId -> { filter, overlay }
 
+  // View modes: spotlight focus, active-speaker follow, fullscreen, resize.
+  let focusId = null;      // 'me' | socketId of the spotlighted tile
+  let autoFollow = true;   // follow the active remote speaker
+  let lastFocusSwitch = 0;
+
   const el = (id) => document.getElementById(id);
 
   function avatarColor(name) {
@@ -87,6 +92,9 @@
     el('call-mic').disabled = !inCall;
     el('call-cam').disabled = !inCall;
     el('call-fx').disabled = !inCall;
+    el('call-view').disabled = !inCall;
+    el('call-auto').disabled = !inCall;
+    el('call-full').disabled = !inCall;
     updateStrip();
   }
 
@@ -270,7 +278,141 @@
       peers.delete(peerId);
     }
     document.querySelector(`[data-tile="${peerId}"]`)?.remove();
+    if (focusId === peerId) setFocus(null);
     updateStrip();
+  }
+
+  // ---- View modes ----------------------------------------------------------
+  const callPanel = () => (el('call-strip') ? el('call-strip').closest('.call') : null);
+  const allTiles = () => document.querySelectorAll('.call-videos .video-tile');
+  const tileKey = (t) => t.getAttribute('data-tile');
+
+  function setFocus(key) {
+    focusId = key;
+    for (const t of allTiles()) t.classList.toggle('is-focus', tileKey(t) === key);
+    const strip = el('call-strip');
+    if (strip) strip.classList.toggle('mode-focus', !!key);
+    const v = el('call-view');
+    if (v) v.setAttribute('aria-pressed', key ? 'true' : 'false');
+  }
+
+  function reportSpeaking(key, tile, speaking) {
+    if (tile) tile.classList.toggle('speaking', speaking);
+    if (
+      speaking && autoFollow && key !== 'me' && focusId !== key &&
+      Date.now() - lastFocusSwitch > 700
+    ) {
+      lastFocusSwitch = Date.now();
+      setFocus(key);
+    }
+  }
+
+  function setAutoFollow(on) {
+    autoFollow = on;
+    const a = el('call-auto');
+    if (a) a.setAttribute('aria-pressed', String(on));
+    if (on) {
+      const loudest = document.querySelector(
+        '.video-tile.speaking[data-tile]:not([data-tile="me"])'
+      );
+      if (loudest) setFocus(tileKey(loudest));
+    }
+  }
+
+  function toggleViewMode() {
+    if (focusId) {
+      setFocus(null);
+      setAutoFollow(false);
+      return;
+    }
+    const first =
+      document.querySelector('#remote-videos .video-tile') ||
+      document.querySelector('.call-videos .video-tile');
+    if (first) setFocus(tileKey(first));
+    setAutoFollow(false);
+  }
+
+  function toggleFullscreen() {
+    const panel = callPanel();
+    if (!panel) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+      return;
+    }
+    if (panel.requestFullscreen) {
+      panel.requestFullscreen().catch(() => {
+        panel.classList.toggle('call-fs');
+        syncFsState();
+      });
+    } else {
+      panel.classList.toggle('call-fs');
+      syncFsState();
+    }
+  }
+
+  function syncFsState() {
+    const panel = callPanel();
+    if (!panel) return;
+    const on = !!document.fullscreenElement || panel.classList.contains('call-fs');
+    panel.classList.toggle('is-fullscreen', on);
+    const b = el('call-full');
+    if (b) {
+      b.title = on ? 'Exit fullscreen' : 'Fullscreen';
+      b.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Fullscreen');
+    }
+  }
+  document.addEventListener('fullscreenchange', syncFsState);
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const panel = callPanel();
+    if (panel && panel.classList.contains('call-fs') && !document.fullscreenElement) {
+      panel.classList.remove('call-fs');
+      syncFsState();
+    }
+  });
+
+  function initResize() {
+    const strip = el('call-strip');
+    const handle = el('call-resize');
+    if (!strip || !handle) return;
+    const clampH = (v) => Math.max(120, Math.min(640, Math.round(v)));
+    const saved = Number(localStorage.getItem('w2g-call-h'));
+    if (saved >= 120 && saved <= 640) {
+      strip.style.setProperty('--tile-h', saved + 'px');
+      strip.setAttribute('data-sized', '');
+    }
+    const currentH = () => {
+      const t = document.querySelector('.call-videos .video-tile');
+      return t ? t.getBoundingClientRect().height || 240 : 240;
+    };
+    let dragging = false, startY = 0, startH = 0;
+    handle.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      startY = e.clientY;
+      startH = strip.hasAttribute('data-sized')
+        ? parseInt(strip.style.getPropertyValue('--tile-h'), 10) || 240
+        : currentH();
+      try { handle.setPointerCapture(e.pointerId); } catch { /* noop */ }
+      e.preventDefault();
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      strip.setAttribute('data-sized', '');
+      strip.style.setProperty('--tile-h', clampH(startH + (e.clientY - startY)) + 'px');
+    });
+    const endDrag = () => {
+      if (!dragging) return;
+      dragging = false;
+      const h = parseInt(strip.style.getPropertyValue('--tile-h'), 10);
+      if (h) localStorage.setItem('w2g-call-h', String(h));
+    };
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
+    handle.addEventListener('dblclick', () => {
+      strip.removeAttribute('data-sized');
+      strip.style.removeProperty('--tile-h');
+      try { localStorage.removeItem('w2g-call-h'); } catch { /* noop */ }
+    });
   }
 
   function ensurePeer(peerId) {
@@ -291,7 +433,7 @@
         st.stream = e.streams[0];
         if (st.unwatch) st.unwatch();
         st.unwatch = watchVolume(e.streams[0], (speaking) =>
-          tile.classList.toggle('speaking', speaking)
+          reportSpeaking(peerId, tile, speaking)
         );
       }
       for (const track of e.streams[0].getTracks()) {
@@ -409,8 +551,7 @@
     refreshLocalTile();
     if (localUnwatch) localUnwatch();
     localUnwatch = watchVolume(localStream, (speaking) => {
-      const tile = localTile();
-      if (tile) tile.classList.toggle('speaking', speaking);
+      reportSpeaking('me', localTile(), speaking);
     });
     const others = `${callIds.length} other${callIds.length === 1 ? '' : 's'} here`;
     setStatus(voiceOnly ? `In call, voice only \u2014 no camera (${others}).` : `In call (${others}).`);
@@ -438,6 +579,9 @@
     el('local-video').srcObject = null;
     el('call-strip').hidden = true;
     inCall = false;
+    setFocus(null);
+    setAutoFollow(true);
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     setStatus('Not in call.');
     const micBtn = el('call-mic');
     const camBtn = el('call-cam');
@@ -647,6 +791,23 @@
 
     el('call-fx').addEventListener('click', () => setFxPanel(el('fx-panel').hidden));
     el('fx-close').addEventListener('click', () => setFxPanel(false));
+    el('call-view').addEventListener('click', toggleViewMode);
+    el('call-auto').addEventListener('click', () => setAutoFollow(!autoFollow));
+    el('call-full').addEventListener('click', toggleFullscreen);
+    el('call-strip').addEventListener('click', (e) => {
+      if (!inCall || !e.target || !e.target.closest) return;
+      const tile = e.target.closest('.video-tile');
+      if (!tile) return;
+      const key = tileKey(tile);
+      if (focusId === key) {
+        setFocus(null);
+        setAutoFollow(false);
+      } else {
+        setFocus(key);
+        setAutoFollow(false);
+      }
+    });
+    initResize();
     el('fx-panel').addEventListener('click', (e) => {
       const t = e && e.target;
       if (!t || !t.dataset) return;

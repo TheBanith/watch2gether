@@ -1290,6 +1290,219 @@
     #chat-send:not(:disabled):active { transform: scale(0.92); }
 
     /* =========================================================================
+       Chat picker — emoji / stickers / GIFs (Telegram-style)
+       ========================================================================= */
+    .pick-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin: 0 12px 10px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      background: rgba(9, 10, 14, 0.82);
+      box-shadow: 0 -14px 34px -18px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      animation: pick-in 0.16s var(--ease);
+    }
+    .pick-panel[hidden] { display: none; }
+    @keyframes pick-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .pick-head { display: flex; align-items: center; gap: 8px; }
+    .pick-tabs {
+      display: flex;
+      gap: 2px;
+      flex: none;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: var(--r-pill);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .pick-tab {
+      padding: 5px 12px;
+      border: 0;
+      border-radius: var(--r-pill);
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .pick-tab:hover { color: var(--text); }
+    .pick-tab.is-on {
+      background: linear-gradient(135deg, var(--primary), var(--violet));
+      color: #fff;
+      box-shadow: 0 4px 14px -4px rgba(88, 101, 242, 0.75);
+    }
+    #pick-search {
+      flex: 1;
+      min-width: 0;
+      height: 34px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: var(--r-pill);
+      background: var(--input);
+      color: var(--text);
+      font-size: 12.5px;
+    }
+    #pick-search:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.22); }
+    #pick-search::placeholder { color: var(--subtle); }
+    .pick-cats { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+    .pick-cats::-webkit-scrollbar { display: none; }
+    .pick-cat {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .pick-cat:hover { background: rgba(255, 255, 255, 0.07); color: var(--text); }
+    .pick-cat.is-on { border-color: rgba(88, 101, 242, 0.5); background: rgba(88, 101, 242, 0.18); color: #c7ccff; }
+    .pick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+      gap: 2px;
+      max-height: 236px;
+      overflow-y: auto;
+      padding: 2px;
+    }
+    .pick-grid::-webkit-scrollbar { width: 6px; }
+    .pick-grid::-webkit-scrollbar-thumb { border-radius: 99px; background: rgba(255, 255, 255, 0.14); }
+    .pick-grid::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.24); }
+    .pick-grid.mode-sticker { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
+    .pick-grid.mode-gif { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); max-height: 262px; }
+    .pick-item {
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.12s ease, transform 0.12s var(--ease);
+    }
+    .pick-item.pick-emoji { aspect-ratio: 1; font-size: 22px; line-height: 1; }
+    .pick-item.pick-emoji:hover { background: rgba(255, 255, 255, 0.09); transform: scale(1.14); }
+    .pick-item.pick-sticker { aspect-ratio: 1; padding: 4px; }
+    .pick-item.pick-sticker img { width: 100%; height: 100%; object-fit: contain; }
+    .pick-item.pick-sticker:hover { background: rgba(88, 101, 242, 0.18); transform: scale(1.05); }
+    .pick-item.pick-gif { aspect-ratio: 16 / 10; padding: 0; overflow: hidden; border: 1px solid var(--line); }
+    .pick-item.pick-gif img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .pick-item.pick-gif:hover { border-color: rgba(88, 101, 242, 0.65); box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.3); }
+    .pick-empty { grid-column: 1 / -1; padding: 20px 8px; color: var(--subtle); font-size: 12.5px; text-align: center; }
+    .pick-btn {
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      min-height: 44px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 0;
+    }
+    .pick-btn svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+    .pick-btn[aria-expanded="true"] {
+      background: rgba(88, 101, 242, 0.3);
+      border-color: rgba(170, 179, 255, 0.55);
+      color: #c7ccff;
+      box-shadow: 0 0 16px rgba(88, 101, 242, 0.4);
+    }
+    #chat-log .msg-media { margin-top: 3px; }
+    #chat-log .msg-media img.sticker { display: block; width: 136px; max-width: 74%; border-radius: 16px; }
+    #chat-log .msg-media img.gif {
+      display: block;
+      width: min(258px, 80%);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #000;
+    }
+
+    /* =========================================================================
+       Call — focus / spotlight, fullscreen, resize
+       ========================================================================= */
+    .video-tile { cursor: pointer; }
+    #call-strip.mode-focus .call-videos { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    #call-strip.mode-focus .video-tile:not(.is-focus) {
+      height: clamp(84px, 14vh, 132px);
+      aspect-ratio: auto;
+    }
+    #call-strip[data-sized] .video-tile { height: var(--tile-h, 240px); aspect-ratio: auto; }
+    #call-strip[data-sized].mode-focus .video-tile:not(.is-focus) { height: clamp(84px, 14vh, 132px); }
+    #call-strip.mode-focus .video-tile.is-focus {
+      grid-column: 1 / -1;
+      order: -1;
+      height: clamp(230px, 44vh, 560px);
+      aspect-ratio: auto;
+      border-color: rgba(170, 179, 255, 0.65);
+      box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.55), 0 0 46px -8px rgba(88, 101, 242, 0.65), 0 16px 32px -14px rgba(0, 0, 0, 0.85);
+    }
+    #call-strip[data-sized].mode-focus .video-tile.is-focus { height: clamp(230px, 44vh, 560px); }
+
+    #call-resize { position: relative; display: block; height: 15px; margin-top: 6px; cursor: ns-resize; touch-action: none; }
+    #call-resize::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 64px;
+      height: 4px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.15);
+      transition: width 0.15s ease, background 0.15s ease;
+    }
+    #call-resize:hover::before { width: 108px; background: rgba(170, 179, 255, 0.8); }
+    #call-resize:active::before { background: var(--primary); }
+
+    .call:fullscreen,
+    .call.call-fs {
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      margin: 0;
+      padding: 18px;
+      border: 0;
+      border-radius: 0;
+      background: #0a0b10;
+    }
+    .call.call-fs { position: fixed; inset: 0; z-index: 950; }
+    .call:fullscreen { width: 100%; height: 100%; }
+    .call::backdrop { background: rgba(5, 6, 10, 0.93); }
+    .call:fullscreen .prejoin,
+    .call.call-fs .prejoin { display: none; }
+    .call:fullscreen .call-videos,
+    .call.call-fs .call-videos { grid-template-columns: repeat(auto-fill, minmax(min(44vw, 430px), 1fr)); }
+    .call:fullscreen #call-strip.mode-focus .video-tile.is-focus,
+    .call.call-fs #call-strip.mode-focus .video-tile.is-focus { height: min(62vh, 620px); }
+    .call:fullscreen .call-buttons,
+    .call.call-fs .call-buttons { position: sticky; bottom: 6px; }
+
+    /* New pill buttons: neutral when off (override the red aria rule), blue when on */
+    #call-view[aria-pressed="false"],
+    #call-auto[aria-pressed="false"] {
+      background: rgba(255, 255, 255, 0.09) !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+      color: #fff !important;
+    }
+    #call-view[aria-pressed="true"],
+    #call-auto[aria-pressed="true"],
+    .call.is-fullscreen #call-full {
+      background: rgba(88, 101, 242, 0.32) !important;
+      border-color: rgba(170, 179, 255, 0.55) !important;
+      color: #fff !important;
+      box-shadow: 0 0 16px rgba(88, 101, 242, 0.45);
+    }
+    #call-view { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='3.5' width='7' height='7' rx='1.5'/%3E%3Crect x='13.5' y='3.5' width='7' height='7' rx='1.5'/%3E%3Crect x='3.5' y='13.5' width='7' height='7' rx='1.5'/%3E%3Crect x='13.5' y='13.5' width='7' height='7' rx='1.5'/%3E%3C/svg%3E"); }
+    #call-view[aria-pressed="true"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15'/%3E%3Crect x='9.5' y='9.5' width='5' height='5' rx='1'/%3E%3C/svg%3E"); }
+    #call-auto { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 5 6.5 9H3v6h3.5L11 19z'/%3E%3Cpath d='M15.5 8.5a5 5 0 0 1 0 7M18.2 6a8.5 8.5 0 0 1 0 12'/%3E%3C/svg%3E"); }
+    #call-full { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5'/%3E%3C/svg%3E"); }
+    .call.is-fullscreen #call-full { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9h5V4M20 9h-5V4M15 20v-5h5M9 20v-5H4'/%3E%3C/svg%3E"); }
+
+    /* =========================================================================
        Ended state
        ========================================================================= */
     #ended {
@@ -1367,9 +1580,12 @@
       .call { padding: 12px; }
       .prejoin { grid-template-columns: 1fr; justify-items: start; gap: 14px; padding: 16px; }
       .call-videos, #call-strip.no-cam .call-videos { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
-      .call-buttons { gap: 6px; padding: 6px; }
+      .call-buttons { flex-wrap: wrap; gap: 6px; padding: 6px; }
       .call-buttons .button { width: 40px; height: 40px; min-height: 40px; }
       .call-buttons #call-leave { width: 50px; }
+      .pick-head { flex-wrap: wrap; }
+      .pick-grid { max-height: 172px; }
+      .pick-grid.mode-gif { max-height: 200px; }
       .stage-footer { font-size: 12px; }
       .chat li.msg > span.avatar { flex-basis: 36px; width: 36px; height: 36px; }
       .chat li.msg.grouped > .msg-body { margin-left: 48px; }
@@ -1564,6 +1780,10 @@
               <button id="call-cam" class="button secondary" type="button" disabled aria-label="Turn camera off" title="Camera"></button>
               <button id="call-fx" class="button secondary" type="button" disabled aria-label="Camera effects" title="Camera effects" aria-haspopup="true" aria-expanded="false"></button>
               <span class="pill-sep" aria-hidden="true"></span>
+              <button id="call-view" class="button secondary" type="button" disabled aria-label="Focus mode" title="Focus a video" aria-pressed="false"></button>
+              <button id="call-auto" class="button secondary" type="button" disabled aria-label="Follow active speaker" title="Follow the active speaker" aria-pressed="true"></button>
+              <button id="call-full" class="button secondary" type="button" disabled aria-label="Fullscreen call" title="Fullscreen"></button>
+              <span class="pill-sep" aria-hidden="true"></span>
               <button id="call-leave" class="button" type="button" disabled aria-label="Leave call" title="Leave call"></button>
             </div>
 
@@ -1604,6 +1824,8 @@
                 </div>
               </div>
             </div>
+
+            <div id="call-resize" title="Drag to resize videos — double-click to reset" aria-hidden="true"></div>
           </div>
         </section>
 
@@ -1629,7 +1851,23 @@
 
         <ul id="chat-log" aria-label="Messages" aria-live="polite"></ul>
 
+        <div id="pick-panel" class="pick-panel" hidden>
+          <div class="pick-head">
+            <div class="pick-tabs" role="tablist" aria-label="Picker mode">
+              <button class="pick-tab is-on" type="button" data-pick="emoji" role="tab" aria-selected="true">Emoji</button>
+              <button class="pick-tab" type="button" data-pick="sticker" role="tab" aria-selected="false">Stickers</button>
+              <button class="pick-tab" type="button" data-pick="gif" role="tab" aria-selected="false">GIFs</button>
+            </div>
+            <input id="pick-search" type="search" placeholder="Search emoji" aria-label="Search emoji" autocomplete="off">
+          </div>
+          <div id="pick-cats" class="pick-cats" role="tablist" aria-label="Emoji categories"></div>
+          <div id="pick-grid" class="pick-grid" aria-label="Picker items"></div>
+        </div>
+
         <div class="chat-compose">
+          <button id="pick-btn" class="button secondary pick-btn" type="button" aria-label="Emoji, stickers and GIFs" title="Emoji, stickers & GIFs" aria-expanded="false" aria-controls="pick-panel">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.4 2.2 2 3.5 2s2.5-.6 3.5-2"/><circle cx="9" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.1" fill="currentColor" stroke="none"/></svg>
+          </button>
           <input id="chat-text" type="text" maxlength="500" placeholder="Message #movie-chat" aria-label="Message movie chat" autocomplete="off">
           <button id="chat-send" class="button" type="button" aria-label="Send message">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 2.5 10.5 13.5"/><path d="m21.5 2.5-7 19-4-8-8-4z"/></svg>
