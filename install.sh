@@ -30,7 +30,22 @@ command -v apt-get >/dev/null || die "this installer targets Debian/Ubuntu (apt)
 log "Installing base packages"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get install -y -qq curl ca-certificates gnupg ffmpeg openssl >/dev/null
+# build-essential/python3: native npm modules (better-sqlite3) compile when no prebuild fits
+apt-get install -y -qq curl ca-certificates gnupg ffmpeg openssl build-essential python3 >/dev/null
+
+# low-RAM guard: native builds and ffmpeg transcodes OOM on boxes this small
+MEM_KB="$(awk '/MemTotal/{print $2}' /proc/meminfo)"
+SWAP_KB="$(awk '/SwapTotal/{print $2}' /proc/meminfo)"
+if [ "$SWAP_KB" -eq 0 ] && [ "$MEM_KB" -lt 2000000 ]; then
+  log "Creating 1G swap (low-RAM box)"
+  if ! fallocate -l 1G /swapfile 2>/dev/null; then
+    dd if=/dev/zero of=/swapfile bs=1M count=1024 status=none
+  fi
+  chmod 600 /swapfile
+  mkswap /swapfile >/dev/null
+  swapon /swapfile
+  grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
 
 if ! command -v node >/dev/null || [ "$(node -v | sed 's/v\([0-9]*\).*/\1/')" -lt 18 ]; then
   log "Installing Node.js ${NODE_MAJOR}.x"
@@ -46,17 +61,21 @@ mkdir -p "$APP_DIR"
 log "Copying application files"
 # Copy source (never node_modules/data from the source tree).
 for item in src public package.json package-lock.json; do
-  [ -e "$SRC_DIR/$item" ] && cp -r "$SRC_DIR/$item" "$APP_DIR/"
+  if [ -e "$SRC_DIR/$item" ]; then cp -r "$SRC_DIR/$item" "$APP_DIR/"; fi
 done
 mkdir -p "$APP_DIR/data/uploads"
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
 log "Installing npm dependencies"
 if [ -f "$APP_DIR/package-lock.json" ]; then
-  ( cd "$APP_DIR" && sudo -u "$APP_USER" npm ci --omit=dev >/dev/null 2>&1 ) \
-    || ( cd "$APP_DIR" && sudo -u "$APP_USER" npm install --omit=dev >/dev/null 2>&1 )
+  if ! ( cd "$APP_DIR" && sudo -u "$APP_USER" npm ci --omit=dev ); then
+    log "npm ci failed — retrying with npm install"
+    ( cd "$APP_DIR" && sudo -u "$APP_USER" npm install --omit=dev ) \
+      || die "npm install failed (network? low memory? native build?)"
+  fi
 else
-  ( cd "$APP_DIR" && sudo -u "$APP_USER" npm install --omit=dev >/dev/null 2>&1 )
+  ( cd "$APP_DIR" && sudo -u "$APP_USER" npm install --omit=dev ) \
+    || die "npm install failed (network? low memory? native build?)"
 fi
 
 # ---- optional TURN relay (needed for reliable cross-network calls) ----
