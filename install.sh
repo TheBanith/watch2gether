@@ -11,8 +11,14 @@ APP_DIR="${APP_DIR:-/opt/watch2gether}"
 APP_USER="${APP_USER:-watch}"
 PORT="${PORT:-3000}"
 DOMAIN="${DOMAIN:-}"           # set to enable HTTPS via Caddy + TURN relay
-NODE_MAJOR="${NODE_MAJOR:-20}"
+NODE_MAJOR="${NODE_MAJOR:-22}"
+MAX_FILE_MB="${MAX_FILE_MB:-}" # optional upload cap (MB); app default 6144
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+MAX_ENV=""
+if [ -n "$MAX_FILE_MB" ]; then
+  MAX_ENV="Environment=MAX_FILE_MB=${MAX_FILE_MB}"
+fi
 
 log() { printf '\n\033[1;36m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
@@ -102,6 +108,7 @@ ExecStart=$(command -v node) ${APP_DIR}/src/server.js
 Environment=PORT=${PORT}
 Environment=DATA_DIR=${APP_DIR}/data
 ${TURN_ENV}
+${MAX_ENV}
 Restart=on-failure
 RestartSec=3
 

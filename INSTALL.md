@@ -30,6 +30,9 @@ sudo ./install.sh
 
 # Full public setup — HTTPS via Caddy + a TURN relay via coturn
 sudo DOMAIN=watch.example.com ./install.sh
+
+# Any of the env vars below can be passed through, e.g. on a small box:
+sudo MAX_FILE_MB=3072 DOMAIN=watch.example.com ./install.sh
 ```
 
 Point your domain's DNS `A` record at the server first; Caddy fetches a
