@@ -1721,6 +1721,44 @@
     }
     #call-strip[data-sized].mode-focus .video-tile.is-focus { height: clamp(230px, 44vh, 560px); }
 
+    /* ---- Pin-to-stage: with no film loaded and live cameras, the call takes the stage */
+    .stage.call-stage .screen { display: none; }
+    .stage.call-stage .live-tag { display: none; }
+    .stage.call-stage .call { margin-top: 0; }
+    .stage.call-stage .call-videos { grid-template-columns: repeat(auto-fill, minmax(266px, 1fr)); gap: 14px; }
+    .tile-pin {
+      position: absolute;
+      z-index: 8;
+      top: 8px;
+      right: 8px;
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 50%;
+      background: rgba(9, 10, 14, 0.6);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      color: #e5e7eb;
+      opacity: 0;
+      transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .video-tile:hover .tile-pin,
+    .tile-pin:focus-visible { opacity: 1; }
+    .tile-pin svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .tile-pin:hover { background: rgba(88, 101, 242, 0.45); border-color: rgba(170, 179, 255, 0.6); color: #fff; }
+    .tile-pin[aria-pressed="true"] {
+      opacity: 1;
+      background: rgba(88, 101, 242, 0.5);
+      border-color: rgba(170, 179, 255, 0.65);
+      color: #fff;
+      box-shadow: 0 0 14px rgba(88, 101, 242, 0.55);
+    }
+    #call-strip.mode-focus .video-tile:not(.is-focus) .tile-pin { width: 24px; height: 24px; top: 6px; right: 6px; }
+    #call-strip.mode-focus .video-tile:not(.is-focus) .tile-pin svg { width: 12px; height: 12px; }
+
     #call-resize { position: relative; display: block; height: 15px; margin-top: 6px; cursor: ns-resize; touch-action: none; }
     #call-resize::before {
       content: "";
@@ -1994,8 +2032,8 @@
       <section class="stage" aria-label="Shared player">
         <div class="stage-head">
           <div>
-            <span class="eyebrow">The screening room</span>
-            <h2>Now watching</h2>
+            <span id="stage-eyebrow" class="eyebrow">The screening room</span>
+            <h2 id="stage-title">Now watching</h2>
           </div>
           <span class="live-tag"><span class="pulse-dot" aria-hidden="true"></span><strong>LIVE</strong><span class="live-sep" aria-hidden="true"></span>in sync</span>
         </div>
@@ -2069,6 +2107,9 @@
                   <span>You</span>
                 </div>
                 <span class="tile-name">You</span>
+                <button class="tile-pin" type="button" aria-label="Pin to stage" title="Pin to stage" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16v6M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>
+                </button>
                 <span class="mic-state" aria-label="Microphone on">
                   <svg class="mic-on-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"></path></svg>
                   <svg class="mic-muted-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9v3a3 3 0 0 0 5 2.2M15 9V5a3 3 0 0 0-6-.2M5 10v2a7 7 0 0 0 12 4.9M19 10v2a7 7 0 0 1-.5 2.6M12 19v3m-4 0h8M3 3l18 18"></path></svg>

@@ -133,6 +133,7 @@
     strip.classList.toggle('no-cam', inCall && !anyCameraOn());
     const dock = strip.closest ? strip.closest('.call') : document.querySelector('.call');
     if (dock) dock.classList.toggle('in-call', inCall);
+    updateCallStage();
   }
 
   // Calls onSpeaking(true/false) as the stream gets loud/quiet.
@@ -226,10 +227,19 @@
     const mic = document.createElement('span');
     mic.className = 'mic-state';
     mic.innerHTML = MIC_ON;
+    const pin = document.createElement('button');
+    pin.type = 'button';
+    pin.className = 'tile-pin';
+    pin.title = 'Pin to stage';
+    pin.setAttribute('aria-label', 'Pin to stage');
+    pin.setAttribute('aria-pressed', 'false');
+    pin.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16v6M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>';
     tile.appendChild(v);
     tile.appendChild(overlay);
     tile.appendChild(label);
     tile.appendChild(mic);
+    tile.appendChild(pin);
     el('remote-videos').appendChild(tile);
     const fx = peerFx.get(peerId);
     if (fx) applyFxToTile(tile, fx.filter, fx.overlay);
@@ -303,11 +313,32 @@
 
   function setFocus(key) {
     focusId = key;
-    for (const t of allTiles()) t.classList.toggle('is-focus', tileKey(t) === key);
+    for (const t of allTiles()) {
+      const on = tileKey(t) === key;
+      t.classList.toggle('is-focus', on);
+      const pin = t.querySelector ? t.querySelector('.tile-pin') : null;
+      if (pin) pin.setAttribute('aria-pressed', String(on));
+    }
     const strip = el('call-strip');
     if (strip) strip.classList.toggle('mode-focus', !!key);
     const v = el('call-view');
     if (v) v.setAttribute('aria-pressed', key ? 'true' : 'false');
+  }
+
+  // With no film loaded and at least one live camera, the call takes the
+  // stage: the player screen hides and the camera grid grows into its place.
+  function updateCallStage() {
+    const stage = document.querySelector('.stage');
+    if (!stage) return;
+    const video = document.getElementById('player');
+    const hasFile = !!(video && (video.getAttribute('src') || video.currentSrc));
+    const on = inCall && anyCameraOn() && !hasFile;
+    if (on === stage.classList.contains('call-stage')) return;
+    stage.classList.toggle('call-stage', on);
+    const eyebrow = document.getElementById('stage-eyebrow');
+    const title = document.getElementById('stage-title');
+    if (eyebrow) eyebrow.textContent = on ? 'No film playing' : 'The screening room';
+    if (title) title.textContent = on ? 'Cameras are live' : 'Now watching';
   }
 
   function reportSpeaking(key, tile, speaking) {
@@ -910,6 +941,16 @@
       }
     });
     initResize();
+
+    // Idle-stage: react when a film is loaded or unloaded mid-call.
+    const stageVideo = document.getElementById('player');
+    if (stageVideo && typeof MutationObserver === 'function') {
+      new MutationObserver(updateCallStage).observe(stageVideo, {
+        attributes: true,
+        attributeFilter: ['src'],
+      });
+    }
+    updateCallStage();
     el('fx-panel').addEventListener('click', (e) => {
       const t = e && e.target;
       if (!t || !t.dataset) return;
