@@ -220,7 +220,11 @@ const ADVANCE_GUARD_MS = 5000;
 // Memory-only; entries are removed when a socket leaves the room.
 const fxByRoom = new Map();
 const FX_FILTERS = new Set(['none', 'noir', 'retro', 'dream', 'neon', 'frost', 'acid']);
-const FX_OVERLAYS = new Set(['none', 'sparkles', 'hearts', 'embers', 'neon', 'rainbow']);
+const FX_OVERLAYS = new Set([
+  'none', 'sparkles', 'hearts', 'embers', 'neon', 'rainbow',
+  'starfall', 'matrix', 'fireworks', 'petals', 'bubbles',
+  'film', 'frost', 'fire', 'gold',
+]);
 
 // roomId -> Set(socketId) of people currently in the voice/video call.
 // Peers only establish WebRTC connections with others in this set, so the

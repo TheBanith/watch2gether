@@ -25,7 +25,13 @@
 
   // Camera effects (whitelisted client-side AND server-side).
   const FX_FILTERS = ['none', 'noir', 'retro', 'dream', 'neon', 'frost', 'acid'];
-  const FX_OVERLAYS = ['none', 'sparkles', 'hearts', 'embers', 'neon', 'rainbow'];
+  const FX_OVERLAYS = [
+    'none', 'sparkles', 'hearts', 'embers', 'starfall', 'matrix',
+    'fireworks', 'petals', 'bubbles', 'neon', 'rainbow',
+    'film', 'frost', 'fire', 'gold',
+  ];
+  // Overlay values that draw an animated border instead of particles.
+  const FX_FRAMES = ['neon', 'rainbow', 'film', 'frost', 'fire', 'gold'];
   const FX_ART = {
     sparkles:
       "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffd76a' d='M12 2l2.2 6.4L21 11l-6.8 2.6L12 20l-2.2-6.4L3 11l6.8-2.6z'/%3E%3C/svg%3E\")",
@@ -33,6 +39,14 @@
       "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff6b9d' d='M12 21s-7.5-4.9-9.6-9.3C.7 8.3 3 4.8 6.7 4.8c2.1 0 3.6 1.1 4.3 2.2.7-1.1 2.2-2.2 4.3-2.2 3.7 0 6 3.5 4.3 6.9C19.5 16.1 12 21 12 21z'/%3E%3C/svg%3E\")",
     embers:
       "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff8c2a' d='M12 2c1.2 3.2-1.8 4.8-1.8 7.4a3.9 3.9 0 0 0 7.8 0c0-1.5-.7-2.8-1.6-3.9 1.6 1.3 3.1 3.6 3.1 6.6A7.5 7.5 0 1 1 4.5 12C4.5 7.6 8.4 5.6 12 2z'/%3E%3C/svg%3E\")",
+    starfall:
+      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fde68a' d='M12 1.5l2.3 6.7 6.7 2.3-6.7 2.3L12 19.5l-2.3-6.7-6.7-2.3 6.7-2.3z'/%3E%3C/svg%3E\")",
+    petals:
+      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='p' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fbcfe8'/%3E%3Cstop offset='1' stop-color='%23f472b6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23p)' d='M12 1.5c3.6 3.4 6.6 7.6 6.6 12.2 0 4.4-2.9 7.6-6.6 8.8-3.7-1.2-6.6-4.4-6.6-8.8C5.4 9.1 8.4 4.9 12 1.5z'/%3E%3C/svg%3E\")",
+    bubbles:
+      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3CradialGradient id='b' cx='35%25' cy='30%25' r='75%25'%3E%3Cstop offset='0' stop-color='%23ffffff' stop-opacity='.85'/%3E%3Cstop offset='.3' stop-color='%23bae6fd' stop-opacity='.35'/%3E%3Cstop offset='.85' stop-color='%2338bdf8' stop-opacity='.55'/%3E%3Cstop offset='1' stop-color='%237dd3fc' stop-opacity='.85'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='12' cy='12' r='10.5' fill='url(%23b)'/%3E%3Ccircle cx='8.6' cy='7.4' r='2' fill='%23ffffff' opacity='.9'/%3E%3C/svg%3E\")",
+    matrix:
+      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='96' viewBox='0 0 12 96'%3E%3Cg fill='%234ade80' font-family='monospace' font-size='10' text-anchor='middle'%3E%3Ctext x='6' y='9' fill-opacity='0.95'%3E%26%23x30A2;%3C/text%3E%3Ctext x='6' y='21' fill-opacity='0.7'%3E7%3C/text%3E%3Ctext x='6' y='33' fill-opacity='0.9'%3E%26%23x30DF;%3C/text%3E%3Ctext x='6' y='45' fill-opacity='0.6'%3EZ%3C/text%3E%3Ctext x='6' y='57' fill-opacity='0.95'%3E%26%23x30E9;%3C/text%3E%3Ctext x='6' y='69' fill-opacity='0.75'%3E1%3C/text%3E%3Ctext x='6' y='81' fill-opacity='0.9'%3E%26%23x30B1;%3C/text%3E%3Ctext x='6' y='93' fill-opacity='0.65'%3E0%3C/text%3E%3C/g%3E%3C/svg%3E\")",
   };
 
   let socket = null;
@@ -624,19 +638,107 @@
     }
   }
 
+  const fxRnd = (a, b) => a + Math.random() * (b - a);
+
+  function fxP(layer, o) {
+    const p = document.createElement('i');
+    p.className = 'fx-particle';
+    if (o.left != null) p.style.left = o.left;
+    if (o.top != null) p.style.top = o.top;
+    p.style.setProperty('--fx-size', o.size + 'px');
+    p.style.setProperty('--fx-dur', o.dur + 's');
+    p.style.setProperty('--fx-delay', o.delay + 's');
+    if (o.art) p.style.backgroundImage = FX_ART[o.art] || FX_ART.sparkles;
+    layer.appendChild(p);
+    return p;
+  }
+
   function spawnParticles(tile, kind) {
     const layer = document.createElement('div');
     layer.className = 'fx-layer';
     layer.dataset.kind = kind;
-    for (let i = 0; i < 10; i++) {
-      const p = document.createElement('i');
-      p.className = 'fx-particle';
-      p.style.left = (4 + Math.random() * 88).toFixed(1) + '%';
-      p.style.setProperty('--fx-size', (10 + Math.random() * 10).toFixed(0) + 'px');
-      p.style.setProperty('--fx-dur', (2.4 + Math.random() * 2.2).toFixed(1) + 's');
-      p.style.setProperty('--fx-delay', (Math.random() * 3).toFixed(1) + 's');
-      p.style.backgroundImage = FX_ART[kind] || FX_ART.sparkles;
-      layer.appendChild(p);
+    if (kind === 'starfall') {
+      // twinkling stars pinned across the tile + occasional shooting streaks
+      for (let i = 0; i < 14; i++) {
+        fxP(layer, {
+          left: fxRnd(4, 92).toFixed(1) + '%',
+          top: fxRnd(4, 88).toFixed(1) + '%',
+          size: Math.round(fxRnd(7, 15)),
+          dur: fxRnd(1.6, 3.4).toFixed(1),
+          delay: fxRnd(0, 3).toFixed(1),
+          art: 'starfall',
+        });
+      }
+      for (let i = 0; i < 2; i++) {
+        const s = document.createElement('i');
+        s.className = 'fx-shoot';
+        s.style.top = fxRnd(8, 38).toFixed(0) + '%';
+        s.style.left = '-18%';
+        s.style.setProperty('--fx-dur', fxRnd(1.6, 2.6).toFixed(1) + 's');
+        s.style.setProperty('--fx-delay', fxRnd(0.6, 3.4).toFixed(1) + 's');
+        layer.appendChild(s);
+      }
+    } else if (kind === 'matrix') {
+      // glyph columns raining down, head bright / tail fading via mask
+      for (let i = 0; i < 11; i++) {
+        const p = fxP(layer, {
+          left: (i * 8.6 + fxRnd(0, 3)).toFixed(1) + '%',
+          dur: fxRnd(1.1, 2.6).toFixed(2),
+          delay: fxRnd(0, 2.4).toFixed(2),
+          art: 'matrix',
+        });
+        p.style.width = '12px';
+        p.style.height = Math.round(fxRnd(80, 130)) + 'px';
+      }
+    } else if (kind === 'fireworks') {
+      // staggered burst points; each burst's sparks share a delay
+      const colors = ['#fde68a', '#5eead4', '#f9a8d4', '#93c5fd'];
+      for (let b = 0; b < 3; b++) {
+        const burst = document.createElement('i');
+        burst.className = 'fx-burst';
+        burst.style.left = fxRnd(18, 78).toFixed(0) + '%';
+        burst.style.top = fxRnd(14, 58).toFixed(0) + '%';
+        burst.style.setProperty('--fx-delay', (b * 0.95).toFixed(2) + 's');
+        burst.style.setProperty('--fx-c', colors[b % colors.length]);
+        for (let k = 0; k < 10; k++) {
+          const s = document.createElement('i');
+          s.className = 'fx-spark';
+          s.style.setProperty('--a', Math.round(k * 36 + fxRnd(-7, 7)) + 'deg');
+          burst.appendChild(s);
+        }
+        layer.appendChild(burst);
+      }
+    } else if (kind === 'petals') {
+      for (let i = 0; i < 12; i++) {
+        fxP(layer, {
+          left: fxRnd(2, 92).toFixed(1) + '%',
+          size: Math.round(fxRnd(11, 19)),
+          dur: fxRnd(4, 7).toFixed(1),
+          delay: fxRnd(0, 5).toFixed(1),
+          art: 'petals',
+        });
+      }
+    } else if (kind === 'bubbles') {
+      for (let i = 0; i < 9; i++) {
+        fxP(layer, {
+          left: fxRnd(4, 88).toFixed(1) + '%',
+          size: Math.round(fxRnd(14, 32)),
+          dur: fxRnd(3.2, 5.4).toFixed(1),
+          delay: fxRnd(0, 4).toFixed(1),
+          art: 'bubbles',
+        });
+      }
+    } else {
+      // legacy risers: sparkles / hearts / embers
+      for (let i = 0; i < 10; i++) {
+        fxP(layer, {
+          left: fxRnd(4, 88).toFixed(1) + '%',
+          size: Math.round(fxRnd(10, 20)),
+          dur: fxRnd(2.4, 4.6).toFixed(1),
+          delay: fxRnd(0, 3).toFixed(1),
+          art: kind,
+        });
+      }
     }
     tile.appendChild(layer);
   }
@@ -647,9 +749,9 @@
     const o = FX_OVERLAYS.includes(overlay) ? overlay : 'none';
     for (const name of FX_FILTERS) tile.classList.remove('fx-f-' + name);
     if (f !== 'none') tile.classList.add('fx-f-' + f);
-    tile.classList.remove('fx-frame-neon', 'fx-frame-rainbow');
+    for (const frame of FX_FRAMES) tile.classList.remove('fx-frame-' + frame);
     clearFxLayer(tile);
-    if (o === 'neon' || o === 'rainbow') tile.classList.add('fx-frame-' + o);
+    if (FX_FRAMES.includes(o)) tile.classList.add('fx-frame-' + o);
     else if (o !== 'none') spawnParticles(tile, o);
   }
 

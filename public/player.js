@@ -92,6 +92,99 @@
     }
   }
 
+  // ---- Screen vibes (personal player overlay: cinema / projector / ambient)
+  const VIBES = ['none', 'cinema', 'projector', 'ambient'];
+  let vibeTimer = null;
+
+  const vibeOverlay = () => document.getElementById('vibe-overlay');
+  const vibeScreen = () => document.querySelector('.screen');
+
+  function stopVibeSampler() {
+    if (vibeTimer) { clearInterval(vibeTimer); vibeTimer = null; }
+  }
+
+  function sampleAmbientGlow() {
+    const video = el();
+    const screen = vibeScreen();
+    const canvas = document.getElementById('vibe-canvas');
+    if (!video || !screen || !canvas) return;
+    if (video.readyState < 2 || video.paused || video.seeking) return;
+    try {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let x = 0; x < canvas.width; x++) {
+        for (const y of [0, canvas.height - 1]) {
+          const i = (y * canvas.width + x) * 4;
+          r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+        }
+      }
+      for (let y = 0; y < canvas.height; y++) {
+        for (const x of [0, canvas.width - 1]) {
+          const i = (y * canvas.width + x) * 4;
+          r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+        }
+      }
+      r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n);
+      // nudge saturation so the halo reads on dark scenes
+      const avg = (r + g + b) / 3;
+      const boost = (v) => Math.max(0, Math.min(255, Math.round(avg + (v - avg) * 1.5)));
+      screen.style.setProperty('--vibe-glow', `${boost(r)} ${boost(g)} ${boost(b)}`);
+    } catch {
+      /* frame not decodable yet — keep the last glow */
+    }
+  }
+
+  function applyVibe(name) {
+    if (!VIBES.includes(name)) name = 'none';
+    const overlay = vibeOverlay();
+    if (!overlay) return;
+    overlay.className = name === 'none' ? '' : 'vibe-' + name;
+    if (name === 'none') vibeScreen()?.style.removeProperty('--vibe-glow');
+    try { localStorage.setItem('w2g-vibe', name); } catch { /* private mode */ }
+    for (const chip of document.querySelectorAll('[data-vibe]')) {
+      chip.setAttribute('aria-pressed', String(chip.dataset.vibe === name));
+    }
+    const btn = document.getElementById('vibe-btn');
+    if (btn) btn.setAttribute('aria-pressed', String(name !== 'none'));
+    stopVibeSampler();
+    if (name === 'ambient') {
+      sampleAmbientGlow();
+      vibeTimer = setInterval(sampleAmbientGlow, 700);
+    }
+  }
+
+  function initVibes(video) {
+    const btn = document.getElementById('vibe-btn');
+    const panel = document.getElementById('vibe-panel');
+    if (!btn || !panel) return;
+    const close = () => {
+      panel.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    };
+    btn.addEventListener('click', () => {
+      panel.hidden = !panel.hidden;
+      btn.setAttribute('aria-expanded', String(!panel.hidden));
+    });
+    document.getElementById('vibe-close').addEventListener('click', close);
+    panel.addEventListener('click', (e) => {
+      const chip = e.target && e.target.closest ? e.target.closest('[data-vibe]') : null;
+      if (chip) applyVibe(chip.dataset.vibe);
+    });
+    document.addEventListener('pointerdown', (e) => {
+      if (panel.hidden) return;
+      if (panel.contains(e.target) || btn.contains(e.target)) return;
+      close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !panel.hidden) close();
+    });
+    let saved = 'none';
+    try { saved = localStorage.getItem('w2g-vibe') || 'none'; } catch { /* private mode */ }
+    applyVibe(saved);
+  }
+
   function init(roomCode, roomSocket) {
     socket = roomSocket;
     const video = el();
@@ -139,6 +232,7 @@
     });
 
     setInterval(driftCheck, DRIFT_CHECK_MS);
+    initVibes(video);
   }
 
   // User picked a movie: load it locally, tell the room (server rebroadcasts state).

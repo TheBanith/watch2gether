@@ -658,7 +658,8 @@
       box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.1),
         0 40px 90px -30px rgba(88, 101, 242, 0.45),
-        0 30px 60px -20px rgba(0, 0, 0, 0.9);
+        0 30px 60px -20px rgba(0, 0, 0, 0.9),
+        0 0 150px 18px rgb(var(--vibe-glow, 13 14 19) / 0);
     }
     .screen::after {
       content: "";
@@ -1092,6 +1093,284 @@
       animation-delay: var(--fx-delay, 0s);
     }
     @keyframes fx-fall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(170px) rotate(560deg); opacity: 0; } }
+
+    /* ---- Particle overlay variants (keyed by the layer's data-kind) */
+    .fx-layer[data-kind="starfall"] .fx-particle { bottom: auto; animation-name: fx-twinkle; }
+    @keyframes fx-twinkle {
+      0%, 100% { transform: scale(0.55) rotate(0deg); opacity: 0; }
+      35% { transform: scale(1) rotate(18deg); opacity: 1; }
+      65% { transform: scale(0.9) rotate(-12deg); opacity: 0.75; }
+    }
+    .fx-shoot {
+      position: absolute;
+      width: 88px;
+      height: 2.5px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0), #ffffff 55%, #fde68a);
+      box-shadow: 0 0 12px rgba(253, 230, 138, 0.95);
+      opacity: 0;
+      animation: fx-shoot var(--fx-dur, 2s) cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+      animation-delay: var(--fx-delay, 0s);
+    }
+    @keyframes fx-shoot {
+      0% { transform: rotate(24deg) translate(0, 0); opacity: 0; }
+      8% { opacity: 1; }
+      100% { transform: rotate(24deg) translate(170px, 76px); opacity: 0; }
+    }
+
+    .fx-layer[data-kind="matrix"] .fx-particle {
+      bottom: auto;
+      top: -130px;
+      width: 12px;
+      height: 110px;
+      background-repeat: repeat-y;
+      background-size: 12px auto;
+      -webkit-mask-image: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.45) 40%, #000 85%);
+      mask-image: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.45) 40%, #000 85%);
+      animation-name: fx-matrix;
+      animation-timing-function: linear;
+    }
+    @keyframes fx-matrix {
+      0% { transform: translateY(0); opacity: 0; }
+      10% { opacity: 0.95; }
+      82% { opacity: 0.95; }
+      100% { transform: translateY(560px); opacity: 0; }
+    }
+
+    .fx-layer[data-kind="fireworks"] .fx-burst { position: absolute; width: 0; height: 0; }
+    .fx-burst::after {
+      content: "";
+      position: absolute;
+      top: -14px;
+      left: -14px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--fx-c, #fde68a) 0%, transparent 65%);
+      opacity: 0;
+      animation: fx-flash 2.8s ease-out infinite;
+      animation-delay: var(--fx-delay, 0s);
+    }
+    @keyframes fx-flash {
+      0% { transform: scale(0.15); opacity: 0.95; }
+      14% { transform: scale(1.15); opacity: 0.25; }
+      28%, 100% { transform: scale(1.4); opacity: 0; }
+    }
+    .fx-spark {
+      position: absolute;
+      width: 5.5px;
+      height: 5.5px;
+      border-radius: 50%;
+      background: var(--fx-c, #fde68a);
+      box-shadow: 0 0 9px var(--fx-c, #fde68a);
+      opacity: 0;
+      animation: fx-spark 2.8s cubic-bezier(0.12, 0.6, 0.35, 1) infinite;
+      animation-delay: var(--fx-delay, 0s);
+    }
+    @keyframes fx-spark {
+      0% { transform: rotate(var(--a)) translateY(7px) scale(1); opacity: 0; }
+      5% { opacity: 1; }
+      55% { transform: rotate(var(--a)) translateY(48px) scale(0.55); opacity: 0.8; }
+      75%, 100% { transform: rotate(var(--a)) translateY(62px) scale(0.15); opacity: 0; }
+    }
+
+    .fx-layer[data-kind="petals"] .fx-particle {
+      bottom: auto;
+      top: -26px;
+      animation-name: fx-petal;
+      animation-timing-function: ease-in-out;
+    }
+    @keyframes fx-petal {
+      0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+      8% { opacity: 0.95; }
+      28% { transform: translate(22px, 60px) rotate(110deg); }
+      55% { transform: translate(-14px, 130px) rotate(230deg); }
+      82% { transform: translate(16px, 200px) rotate(320deg); opacity: 0.85; }
+      100% { transform: translate(4px, 265px) rotate(380deg); opacity: 0; }
+    }
+
+    .fx-layer[data-kind="bubbles"] .fx-particle {
+      animation-name: fx-bubble;
+      animation-timing-function: ease-in-out;
+    }
+    @keyframes fx-bubble {
+      0% { transform: translate(0, 0) scale(0.55); opacity: 0; }
+      10% { opacity: 0.9; }
+      30% { transform: translate(13px, -48px) scale(1); }
+      55% { transform: translate(-9px, -102px) scale(1.06); }
+      80% { transform: translate(11px, -155px) scale(1.12); opacity: 0.65; }
+      100% { transform: translate(-2px, -205px) scale(1.15); opacity: 0; }
+    }
+
+    /* ---- Frame overlays: frost / fire / gold share the ring scaffold ---- */
+    .video-tile.fx-frame-frost::after,
+    .video-tile.fx-frame-fire::after,
+    .video-tile.fx-frame-gold::after {
+      content: "";
+      position: absolute;
+      z-index: 6;
+      inset: -4px;
+      padding: 3px;
+      border-radius: calc(var(--r-md) + 4px);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    .video-tile.fx-frame-frost::after {
+      background: linear-gradient(135deg, #e0f2fe, #7dd3fc 25%, #cfe8fd 50%, #67e8f9 75%, #bae6fd);
+      background-size: 300% 300%;
+      animation: fx-grad 3.4s linear infinite;
+      filter: drop-shadow(0 0 6px rgba(125, 211, 252, 0.55));
+    }
+    .video-tile.fx-frame-frost::before {
+      content: "";
+      position: absolute;
+      z-index: 6;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle 5px at 7% 9%, rgba(224, 242, 254, 0.95) 55%, transparent 60%),
+        radial-gradient(circle 3px at 12% 5%, rgba(186, 230, 253, 0.8) 55%, transparent 60%),
+        radial-gradient(circle 5px at 93% 9%, rgba(224, 242, 254, 0.95) 55%, transparent 60%),
+        radial-gradient(circle 3px at 88% 5%, rgba(186, 230, 253, 0.8) 55%, transparent 60%),
+        radial-gradient(circle 5px at 7% 91%, rgba(224, 242, 254, 0.95) 55%, transparent 60%),
+        radial-gradient(circle 5px at 93% 91%, rgba(224, 242, 254, 0.95) 55%, transparent 60%);
+      animation: fx-crystal 2.6s ease-in-out infinite;
+    }
+    @keyframes fx-crystal { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+    .video-tile.fx-frame-fire::after {
+      background: linear-gradient(90deg, #f97316, #ef4444 30%, #fbbf24 55%, #dc2626 80%, #f97316);
+      background-size: 280% 100%;
+      animation: fx-grad 2.1s linear infinite, fx-flicker 1.1s linear infinite;
+    }
+    @keyframes fx-flicker {
+      0%, 100% { filter: brightness(1) drop-shadow(0 0 7px rgba(249, 115, 22, 0.6)); }
+      9% { filter: brightness(1.4) drop-shadow(0 0 10px rgba(251, 191, 36, 0.8)); }
+      18% { filter: brightness(0.8) drop-shadow(0 0 5px rgba(239, 68, 68, 0.6)); }
+      36% { filter: brightness(1.25) drop-shadow(0 0 9px rgba(249, 115, 22, 0.75)); }
+      57% { filter: brightness(0.85) drop-shadow(0 0 5px rgba(239, 68, 68, 0.6)); }
+      74% { filter: brightness(1.35) drop-shadow(0 0 10px rgba(251, 191, 36, 0.8)); }
+    }
+    .video-tile.fx-frame-gold::after {
+      background: linear-gradient(115deg, #92400e, #f59e0b 18%, #fde68a 36%, #fbbf24 52%, #b45309 72%, #f59e0b 100%);
+      background-size: 220% 100%;
+      animation: fx-grad 3.8s linear infinite;
+      filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.55));
+    }
+    .video-tile.fx-frame-film::before,
+    .video-tile.fx-frame-film::after {
+      content: "";
+      position: absolute;
+      z-index: 6;
+      left: 0;
+      right: 0;
+      height: 10%;
+      background-color: #07080c;
+      background-image: radial-gradient(circle 3px at center, #e5e7eb 62%, transparent 64%);
+      background-size: 16px 8px;
+      background-position: center;
+      pointer-events: none;
+      animation: fx-film-in 0.5s var(--ease) both;
+    }
+    .video-tile.fx-frame-film::before { top: 0; border-radius: var(--r-md) var(--r-md) 0 0; transform-origin: top; }
+    .video-tile.fx-frame-film::after { bottom: 0; border-radius: 0 0 var(--r-md) var(--r-md); transform-origin: bottom; }
+    @keyframes fx-film-in { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+
+    /* ---- Screen vibes (player overlay — personal preference) ---- */
+    #vibe-overlay { position: absolute; inset: 0; z-index: 4; border-radius: inherit; pointer-events: none; }
+    #vibe-overlay.vibe-cinema::before,
+    #vibe-overlay.vibe-cinema::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 11.5%;
+      background: #04050a;
+      animation: vibe-bar 0.55s var(--ease) both;
+    }
+    #vibe-overlay.vibe-cinema::before { top: 0; transform-origin: top; }
+    #vibe-overlay.vibe-cinema::after { bottom: 0; transform-origin: bottom; }
+    @keyframes vibe-bar { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+    #vibe-overlay.vibe-projector {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+      mix-blend-mode: overlay;
+      opacity: 0.16;
+      animation: vibe-grain 0.5s steps(3) infinite;
+      box-shadow: inset 0 0 130px 42px rgba(2, 3, 6, 0.62);
+    }
+    @keyframes vibe-grain {
+      0% { background-position: 0 0; }
+      33% { background-position: -70px 42px; }
+      66% { background-position: 46px -58px; }
+      100% { background-position: 0 0; }
+    }
+    #vibe-overlay.vibe-projector::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: #020204;
+      opacity: 0;
+      animation: vibe-flicker 5.2s linear infinite;
+    }
+    @keyframes vibe-flicker {
+      0%, 100% { opacity: 0; }
+      11% { opacity: 0.05; }
+      11.8% { opacity: 0; }
+      38% { opacity: 0.035; }
+      39% { opacity: 0; }
+      61% { opacity: 0.07; }
+      62% { opacity: 0; }
+      84% { opacity: 0.03; }
+      85% { opacity: 0; }
+    }
+    #vibe-overlay.vibe-ambient { box-shadow: inset 0 0 46px 6px rgb(var(--vibe-glow, 13 14 19) / 0.28); }
+
+    .vibe-btn {
+      position: absolute;
+      z-index: 6;
+      top: 12px;
+      right: 12px;
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      background: rgba(10, 11, 16, 0.55);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      color: #e5e7eb;
+      opacity: 0.65;
+      transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .screen:hover .vibe-btn,
+    .vibe-btn:focus-visible,
+    .vibe-btn[aria-expanded="true"] { opacity: 1; }
+    .vibe-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
+    .vibe-btn[aria-expanded="true"] { color: #c7ccff; border-color: rgba(170, 179, 255, 0.5); background: rgba(88, 101, 242, 0.32); }
+    .vibe-panel {
+      position: absolute;
+      z-index: 7;
+      top: 58px;
+      right: 12px;
+      width: 236px;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--r-lg);
+      background: rgba(18, 19, 27, 0.92);
+      -webkit-backdrop-filter: blur(22px) saturate(1.4);
+      backdrop-filter: blur(22px) saturate(1.4);
+      box-shadow: 0 24px 50px -14px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      animation: vibe-pop 0.16s var(--ease);
+    }
+    .vibe-panel[hidden] { display: none; }
+    @keyframes vibe-pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .vibe-note { margin: 12px 0 0; color: var(--subtle); font-size: 11px; line-height: 1.5; }
 
     .fx-panel {
       position: absolute;
@@ -1728,6 +2007,29 @@
             <p>Upload a film or pick one from the library. Play, pause and seek stay in sync for everyone.</p>
           </div>
           <video id="player" controls preload="metadata" playsinline></video>
+          <div id="vibe-overlay" aria-hidden="true"></div>
+          <canvas id="vibe-canvas" width="32" height="18" hidden></canvas>
+          <button id="vibe-btn" class="vibe-btn" type="button" aria-label="Screen vibes" title="Screen vibes" aria-haspopup="true" aria-expanded="false" aria-controls="vibe-panel">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+          </button>
+          <div id="vibe-panel" class="vibe-panel" hidden>
+            <div class="fx-head">
+              <span>Screen vibes</span>
+              <button id="vibe-close" type="button" aria-label="Close vibes">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+            <div class="fx-group">
+              <span class="fx-label">Player overlay</span>
+              <div class="fx-chips" role="group" aria-label="Screen vibes">
+                <button class="fx-chip" type="button" data-vibe="none" aria-pressed="true">None</button>
+                <button class="fx-chip" type="button" data-vibe="cinema" aria-pressed="false">Cinema bars</button>
+                <button class="fx-chip" type="button" data-vibe="projector" aria-pressed="false">Projector</button>
+                <button class="fx-chip" type="button" data-vibe="ambient" aria-pressed="false">Ambient glow</button>
+              </div>
+            </div>
+            <p class="vibe-note">Vibes are personal — only you see them on your screen.</p>
+          </div>
         </div>
 
         <!-- Call panel -->
@@ -1807,14 +2109,28 @@
                 </div>
               </div>
               <div class="fx-group">
-                <span class="fx-label">Overlays</span>
-                <div class="fx-chips" role="group" aria-label="Video overlays">
+                <span class="fx-label">Particles</span>
+                <div class="fx-chips" role="group" aria-label="Particle overlays">
                   <button class="fx-chip" type="button" data-fx-overlay="none" aria-pressed="true">None</button>
                   <button class="fx-chip" type="button" data-fx-overlay="sparkles" aria-pressed="false">Sparkles</button>
                   <button class="fx-chip" type="button" data-fx-overlay="hearts" aria-pressed="false">Hearts</button>
                   <button class="fx-chip" type="button" data-fx-overlay="embers" aria-pressed="false">Embers</button>
-                  <button class="fx-chip" type="button" data-fx-overlay="neon" aria-pressed="false">Neon frame</button>
-                  <button class="fx-chip" type="button" data-fx-overlay="rainbow" aria-pressed="false">Rainbow frame</button>
+                  <button class="fx-chip" type="button" data-fx-overlay="starfall" aria-pressed="false">Starfall</button>
+                  <button class="fx-chip" type="button" data-fx-overlay="matrix" aria-pressed="false">Matrix</button>
+                  <button class="fx-chip" type="button" data-fx-overlay="fireworks" aria-pressed="false">Fireworks</button>
+                  <button class="fx-chip" type="button" data-fx-overlay="petals" aria-pressed="false">Petals</button>
+                  <button class="fx-chip" type="button" data-fx-overlay="bubbles" aria-pressed="false">Bubbles</button>
+                </div>
+              </div>
+              <div class="fx-group">
+                <span class="fx-label">Frames</span>
+                <div class="fx-chips" role="group" aria-label="Frame overlays">
+                  <button class="fx-chip" type="button" data-fx-overlay="neon" aria-pressed="false">Neon</button>
+                  <button class="fx-chip" type="button" data-fx-overlay="rainbow" aria-pressed="false">Rainbow</button>
+                  <button class="fx-chip" type="button" data-fx-overlay="film" aria-pressed="false">Film strip</button>
+                  <button class="fx-chip" type="button" data-fx-overlay="frost" aria-pressed="false">Ice</button>
+                  <button class="fx-chip" type="button" data-fx-overlay="fire" aria-pressed="false">Fire</button>
+                  <button class="fx-chip" type="button" data-fx-overlay="gold" aria-pressed="false">Gold</button>
                 </div>
               </div>
               <div class="fx-group">
